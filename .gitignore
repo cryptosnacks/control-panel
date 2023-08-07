@@ -152,8 +152,9 @@ logs
 node_modules
 .notes
 database
-extensions
+# extensions
 uploads
+temp
 
 # Ignore these
 # Dockerfile
