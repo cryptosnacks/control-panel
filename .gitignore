@@ -155,6 +155,8 @@ database
 # extensions
 uploads
 temp
+export
+migrate.config.ini
 
 # Ignore these
 # Dockerfile
