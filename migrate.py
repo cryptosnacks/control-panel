@@ -36,6 +36,7 @@ def export_data(name):
             
                 if name == 'presets':
                     if not p['bookmark']: continue
+                if name == "roles" and p['name'] == "Administrator": continue
                     
                 data.append(p)
         
@@ -51,15 +52,24 @@ def export_data(name):
 def import_data(name, repeat_until_complete=False):
     
     existing_rows = []
-    
+    _data = {}
+    # if name in ['presets']:
+    #     result = requests.get(f"{restore_baseurl}/{name}?access_token={restore_access_token}&fields=bookmark,collection")
+    #     if 'data' in result.json():
+    #         # modified ID field to avoid the usage of ID which may be different
+    #         _data = {"data": [{ "id": str(r['bookmark'])+str(r['collection']) } for r in result.json()['data']]}
+    #         print(_data)
+    # else:
     result = requests.get(f"{restore_baseurl}/{name}?access_token={restore_access_token}&fields=id")
     if 'data' in result.json():
+        _data = result.json()
+    if _data:
         # print(result.json())
-        if len(result.json()['data']) > 0:
-            if isinstance(result.json()['data'], list):
-                existing_rows = [r['id'] for r in result.json()['data']]
-            elif isinstance(result.json()['data'], dict) and 'id' in result.json()['data']:
-                existing_rows = [result.json()['data']['id']]
+        if len(_data['data']) > 0:
+            if isinstance(_data['data'], list):
+                existing_rows = [r['id'] for r in _data['data']]
+            elif isinstance(_data['data'], dict) and 'id' in _data['data']:
+                existing_rows = [_data['data']['id']]
     
     if os.path.exists(f'export/{name}.json'):
         with open(f'export/{name}.json') as json_file:
@@ -74,6 +84,8 @@ def import_data(name, repeat_until_complete=False):
             
             while True:
                 
+                if count == 0: break
+                                
                 for row in rows['data']:
 
                     if row['id'] in existing_rows: 
@@ -85,18 +97,21 @@ def import_data(name, repeat_until_complete=False):
                     
                     # drop params
                     if name == 'roles':
-                        del row['users']
+                        if 'users' in row: del row['users']
+                    if name == 'presets':
+                        # if 'id' in row: del row['id']
+                        pass
                     if name == 'flows':
-                        del row['user_created']
-                        del row['operations']    
+                        if 'user_created' in row: del row['user_created']
+                        if 'operations' in row: del row['operations']    
                     if name == 'operations':
-                        del row['user_created']
-                        del row['date_created']
+                        if 'user_created' in row: del row['user_created']
+                        if 'date_created' in row: del row['date_created']
                     if name == 'settings':
-                        del row['project_url']
-                        del row['project_logo'] # Uses foreign key for files. Assuming using different filesystem in devlopment.
-                        del row['public_foreground'] # Uses foreign key for files. Assuming using different filesystem in devlopment.
-                        del row['public_background'] # Uses foreign key for files. Assuming using different filesystem in devlopment.
+                        if 'project_url' in row: del row['project_url']
+                        if 'project_logo' in row: del row['project_logo'] # Uses foreign key for files. Assuming using different filesystem in devlopment.
+                        if 'public_foreground' in row: del row['public_foreground'] # Uses foreign key for files. Assuming using different filesystem in devlopment.
+                        if 'public_background' in row: del row['public_background'] # Uses foreign key for files. Assuming using different filesystem in devlopment.
                        
                     if update: 
                         if name == 'settings':
@@ -120,7 +135,6 @@ def import_data(name, repeat_until_complete=False):
                 
                 if not repeat_until_complete: break
                 
-                if count == 0: break
 
 def export_items(collection):
     
@@ -316,7 +330,7 @@ if __name__ == "__main__":
         if _import:
             with console.status("Working..."):
                 print("Importing Bookmarks...")
-                export_data("presets")
+                import_data("presets")
     
     if all or Prompt.ask("[bold][chartreuse2]Are you sure you want to export and import Roles? (y/n): ", choices=['y','n'], default='n').lower() == 'y':
         if _export:
@@ -355,7 +369,7 @@ if __name__ == "__main__":
     #         export_data("permissions")
     #     if _import:
     #         print("Importing Permissions...")
-    #         import_data("permissions")
+    #         # import_data("permissions")
     
     if all or Prompt.ask("[bold][chartreuse2]Are you sure you want to export and import Settings? (y/n): ", choices=['y','n'], default='n').lower() == 'y':
         if _export:
